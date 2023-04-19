@@ -40,11 +40,18 @@ RUN adduser \
     "${USER}"
 
 RUN apk update \
- && apk add --no-cache ca-certificates \
+ && apk add --no-cache ca-certificates git \
  && update-ca-certificates
 
-RUN CGO_ENABLED=0 \
-    go get -u -v github.com/xuri/xgen/cmd/... \
+COPY patch_optional_fields.diff .
+
+RUN git clone https://github.com/xuri/xgen \
+ && ls -al \
+ && cd xgen \
+ && git checkout aec4e71118ac79c03e60ede6dee73aa84d8da527 \
+ && git apply ../patch_optional_fields.diff \
+ && CGO_ENABLED=0 \
+    go build -o /go/bin/xgen ./cmd/xgen \
  && /go/bin/xgen -v
 
 FROM scratch \
