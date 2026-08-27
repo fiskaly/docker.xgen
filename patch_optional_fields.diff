@@ -1,0 +1,37 @@
+diff --git a/genGo.go b/genGo.go
+index d62f00a..0afe6fa 100644
+--- a/genGo.go
++++ b/genGo.go
+@@ -218,11 +218,15 @@ func (gen *CodeGenerator) GoComplexType(v *ComplexType) {
+ 			if element.Plural {
+ 				plural = "[]"
+ 			}
++			var optional string
++			if element.Optional {
++				optional = `,omitempty`
++			}
+ 			fieldType := genGoFieldType(getBasefromSimpleType(trimNSPrefix(element.Type), gen.ProtoTree))
+ 			if fieldType == "time.Time" {
+ 				gen.ImportTime = true
+ 			}
+-			content += fmt.Sprintf("\t%s\t%s%s\t`xml:\"%s\"`\n", genGoFieldName(element.Name, false), plural, fieldType, element.Name)
++			content += fmt.Sprintf("\t%s\t%s%s\t`xml:\"%s%s\"`\n", genGoFieldName(element.Name, false), plural, fieldType, element.Name, optional)
+ 		}
+ 		if len(v.Base) > 0 {
+ 			// If the type is a built-in type, generate a Value field as chardata.
+diff --git a/xmlElement.go b/xmlElement.go
+index 6157332..6e13581 100644
+--- a/xmlElement.go
++++ b/xmlElement.go
+@@ -48,6 +48,11 @@ func (opt *Options) OnElement(ele xml.StartElement, protoTree []interface{}) (er
+ 				e.Plural = true
+ 			}
+ 		}
++		if attr.Name.Local == "minOccurs" {
++			if attr.Value == "0" {
++				e.Optional = true
++			}
++		}
+ 	}
+ 
+ 	if e.Type == "" {
